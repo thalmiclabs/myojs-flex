@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<script>global=window</script>
+		<script src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.7.0/underscore-min.js"></script>
+		<script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+
+		<script src='myo.js'></script>
+		<script src='../vector.myo.js'></script>
+
+		<link href="http://netdna.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet">
+		<link href="diagnosticsStyle/base.css" rel="stylesheet">
+		<link rel="icon" href="diagnosticsStyle/img/favicon.ico" type="image/x-icon" />
+
+		<style>
+
+		.crosshairGrid{
+			position : relative;
+			display  : inline-block;
+			height   : 600px;
+			width    : 600px;
+			border   : #c14b2a 1px solid;
+		}
+		.lineX{
+			position     : absolute;
+			top          : 0px;
+			left         : 0px;
+			height       : 100%;
+			border-right : #58bccc 1px solid;
+		}
+		.lineY{
+			position      : absolute;
+			top           : 0px;
+			left          : 0px;
+			width         : 100%;
+			border-bottom : #58bccc 1px solid;
+		}
+		.thetaCircle{
+			position      : absolute;
+			height        : 50px;
+			width         : 50px;
+			margin-top    : -25px;
+			margin-left   : -25px;
+			border        : 1px solid #8aceb5;
+			border-radius : 100%;
+			transform     : rotate(0deg);
+		}
+		.thetaLine{
+			position         : absolute;
+			top              : 0%;
+			left             : 50%;
+			height           : 50%;
+			width            : 4px;
+			margin-left      : -2px;
+			background-color : #c14b2a;
+		}
+		.vectorInfo{
+			display        : inline-block;
+			vertical-align : top;
+			width          : 170px;
+			margin         : 0px 20px;
+			padding-top    : 25px;
+			font-size      : 1.5em;
+			border-top     : #8aceb5 solid 1px;
+		}
+		.info{
+			margin-bottom : 10px;
+		}
+		button{
+			width : 100%;
+		}
+		.gimbleLock{
+			width      : 250px;
+			margin-top : 50px;
+			opacity    : 0;
+			transition : opacity 1s ease-in-out;
+		}
+		.gimbleLock a{
+			font-size : 0.5em;
+		}
+		.warning{
+			font-size                 : 1em;
+			font-weight               : 800;
+			text-transform            : uppercase;
+			color                     : #c14b2a;
+		}
+		.gimbleLock.show{
+			opacity : 1;
+		}
+
+		</style>
+	</head>
+	<body>
+		<title>Vector Demo - Myo.js</title>
+		<h1>
+			Rotational Vector Demo for Myo.js
+			<a href='https://github.com/thalmiclabs/myojs-vector'><small>Project here</small></a>
+		</h1>
+		<p>
+			vector.myo.js exposes an x,y, and theta variables useful to turning arm motions into screen-usable numbers. Either make a fist, or press the button to calibrate the myo. Be sure to calibrate often!
+		</p>
+
+		<div class='crosshairGrid'>
+			<div class='lineX'></div>
+			<div class='lineY'></div>
+
+			<div class="thetaCircle">
+				<div class="thetaLine"></div>
+			</div>
+		</div>
+
+		<div class='vectorInfo'>
+			<div class='info'>
+				<label>x : </label><span class='x'>0</span>
+			</div>
+			<div class='info'>
+				<label>y : </label><span class='y'>0</span>
+			</div>
+			<div class='info'>
+				<label>theta : </label><span class='theta'>0</span>
+			</div>
+
+			<button onclick='myMyo.zeroOrientation()'>Zero Orientation</button>
+
+			<div class='gimbleLock'>
+				<div class='warning warningPulse'>Gimble Lock detected!</div>
+				<a target="_blank" href='http://developerblog.myo.com/quaternions/'>for more information</a>
+			</div>
+		</div>
+
+	</body>
+
+	<script>
+		Myo.connect();
+
+		Myo.on('connected', function(){
+			myMyo = this;
+		})
+
+		Myo.on('fist', function(){
+			this.zeroOrientation();
+		});
+
+		Myo.on('vector', _.throttle(function(vector){
+			$('.x').text(Math.round(1000*vector.x)/1000);
+			$('.y').text(Math.round(1000*vector.y)/1000);
+			$('.theta').text(Math.round(1000*vector.theta)/1000);
+
+			//update crosshair
+			$('.lineX').css({left : 50 + 50*vector.x + "%"});
+			$('.lineY').css({top : 50 - 50*vector.y + "%"});
+
+			$('.thetaCircle').css({
+				left : 50 + 50*vector.x + "%",
+				top : 50 - 50*vector.y + "%",
+				transform : "rotate(" + (-vector.theta*180) + "deg)"
+			});
+
+			gimbleLockDetection(vector);
+		}, 50));
+
+		var gimbleLockDetection = function(vector){
+			if(vector.y > 0.97 || vector.y < -0.97){
+				$('.gimbleLock').addClass('show');
+			}else{
+				$('.gimbleLock').removeClass('show');
+			}
+		}
+	</script>
+</html>
